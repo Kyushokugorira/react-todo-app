@@ -1,39 +1,42 @@
 import React from "react";
 import { Todo } from "./types";
 
-type Props = {
+interface TodoItemProps {
   todo: Todo;
-  updateIsDone: (id: string, value: boolean) => void;
+  updateIsDone: (id: string, isDone: boolean) => void;
   remove: (id: string) => void;
-};
+  edit: (id: string) => void;
+}
 
-const TodoItem = (props: Props) => {
-  const todo = props.todo;
+const TodoItem: React.FC<TodoItemProps> = ({
+  todo,
+  updateIsDone,
+  remove,
+  edit,
+}) => {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between border-b p-2">
       <div className="flex items-center">
         <input
           type="checkbox"
           checked={todo.isDone}
-          onChange={(e) => props.updateIsDone(todo.id, e.target.checked)}
-          className="mr-1.5 cursor-pointer"
+          onChange={(e) => updateIsDone(todo.id, e.target.checked)}
+          className="mr-2"
         />
-        {todo.name}
+        <span className={todo.isDone ? "line-through" : ""}>{todo.name}</span>
       </div>
-      <div>
+      <div className="flex items-center space-x-2">
         <button
-          onClick={() => props.remove(todo.id)}
+          onClick={() => edit(todo.id)}
+          className="rounded-md bg-slate-200 px-2 py-1 text-sm font-bold text-white hover:bg-yellow-500"
+        >
+          編集
+        </button>
+        <button
+          onClick={() => remove(todo.id)}
           className="rounded-md bg-slate-200 px-2 py-1 text-sm font-bold text-white hover:bg-red-500"
         >
           削除
-        </button>
-      </div>
-      <div>
-        <button
-          onClick={() => props.remove(todo.id)}
-          className="rounded-md bg-slate-200 px-2 py-1 text-sm font-bold text-white hover:bg-red-500"
-        >
-          入力
         </button>
       </div>
     </div>

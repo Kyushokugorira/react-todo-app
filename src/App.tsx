@@ -19,6 +19,7 @@ const App = () => {
   const [inputValue, setInputValue] = useState("");
   const [initialized, setInitialized] = useState(false);
   const [isAddingTodo, setIsAddingTodo] = useState(false); // フォームの表示・非表示を管理
+  const [isEditingTodo, setIsEditingTodo] = useState<string | null>(null); // 編集モードの管理
   const localStorageKey = "TodoApp";
 
   useEffect(() => {
@@ -130,6 +131,45 @@ const App = () => {
     setIsAddingTodo(false); // フォームを非表示にする
   };
 
+  const editTodo = (id: string) => {
+    const todo = todos.find((todo) => todo.id === id);
+    if (todo) {
+      setNewTodoName(todo.name);
+      setNewTodoPriority(todo.priority);
+      setNewTodoDeadline(todo.deadline);
+      setIsEditingTodo(id);
+      setIsAddingTodo(true);
+    }
+  };
+
+  const updateTodo = () => {
+    if (newTodoName.length < 2 || newTodoName.length > 32) {
+      return;
+    }
+    const err = isValidTodoName(newTodoName);
+    if (err !== "") {
+      setNewTodoNameError(err);
+      return;
+    }
+    const updatedTodos = todos.map((todo) => {
+      if (todo.id === isEditingTodo) {
+        return {
+          ...todo,
+          name: newTodoName,
+          priority: newTodoPriority,
+          deadline: newTodoDeadline,
+        };
+      }
+      return todo;
+    });
+    setTodos(updatedTodos);
+    setNewTodoName("");
+    setNewTodoPriority(3);
+    setNewTodoDeadline(null);
+    setIsAddingTodo(false);
+    setIsEditingTodo(null);
+  };
+
   const sortTodosByDeadline = () => {
     const sortedTodos = [...todos].sort((a, b) => {
       if (a.deadline && b.deadline) {
@@ -237,18 +277,21 @@ const App = () => {
 
               <button
                 type="button"
-                onClick={addNewTodo}
+                onClick={isEditingTodo ? updateTodo : addNewTodo}
                 className={twMerge(
                   "w-full rounded-md bg-indigo-500 px-3 py-1 font-bold text-white hover:bg-indigo-600",
                   newTodoNameError && "cursor-not-allowed opacity-50"
                 )}
               >
-                新しいタスクを追加
+                {isEditingTodo ? "タスクを更新" : "新しいタスクを追加"}
               </button>
 
               <button
                 type="button"
-                onClick={() => setIsAddingTodo(false)}
+                onClick={() => {
+                  setIsAddingTodo(false);
+                  setIsEditingTodo(null);
+                }}
                 className="mt-2 w-full rounded-md bg-gray-500 px-3 py-1 font-bold text-white hover:bg-gray-600"
               >
                 キャンセル
@@ -274,25 +317,32 @@ const App = () => {
         >
           完了済みのタスクを削除
         </button>
+
+        <div className="mt-4 flex justify-between">
+          <button
+            type="button"
+            onClick={sortTodosByDeadline}
+            className="rounded-md bg-green-500 px-3 py-1 font-bold text-white hover:bg-green-600"
+          >
+            期日でソート
+          </button>
+          <button
+            type="button"
+            onClick={sortTodosByPriority}
+            className="rounded-md bg-yellow-500 px-3 py-1 font-bold text-white hover:bg-yellow-600"
+          >
+            優先度でソート
+          </button>
+        </div>
       </div>
-      <div className="mt-4 flex justify-between">
-        <button
-          type="button"
-          onClick={sortTodosByDeadline}
-          className="rounded-md bg-green-500 px-3 py-1 font-bold text-white hover:bg-green-600"
-        >
-          期日でソート
-        </button>
-        <button
-          type="button"
-          onClick={sortTodosByPriority}
-          className="rounded-md bg-yellow-500 px-3 py-1 font-bold text-white hover:bg-yellow-600"
-        >
-          優先度でソート
-        </button>
-      </div>
+
       <div className="mt-5">
-        <TodoList todos={todos} updateIsDone={updateIsDone} remove={remove} />
+        <TodoList
+          todos={todos}
+          updateIsDone={updateIsDone}
+          remove={remove}
+          edit={editTodo}
+        />
       </div>
     </div>
   );
