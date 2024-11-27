@@ -18,6 +18,7 @@ const App = () => {
   const [name, setName] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [initialized, setInitialized] = useState(false);
+  const [isAddingTodo, setIsAddingTodo] = useState(false); // フォームの表示・非表示を管理
   const localStorageKey = "TodoApp";
 
   useEffect(() => {
@@ -34,6 +35,17 @@ const App = () => {
     }
     setInitialized(true);
   }, []);
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("name");
+    if (storedName) {
+      setName(storedName);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("name", name);
+  }, [name]);
 
   useEffect(() => {
     if (initialized) {
@@ -115,6 +127,24 @@ const App = () => {
     setNewTodoName("");
     setNewTodoPriority(3);
     setNewTodoDeadline(null);
+    setIsAddingTodo(false); // フォームを非表示にする
+  };
+
+  const sortTodosByDeadline = () => {
+    const sortedTodos = [...todos].sort((a, b) => {
+      if (a.deadline && b.deadline) {
+        return a.deadline.getTime() - b.deadline.getTime();
+      }
+      if (a.deadline) return -1;
+      if (b.deadline) return 1;
+      return 0;
+    });
+    setTodos(sortedTodos);
+  };
+
+  const sortTodosByPriority = () => {
+    const sortedTodos = [...todos].sort((a, b) => b.priority - a.priority);
+    setTodos(sortedTodos);
   };
 
   return (
@@ -143,71 +173,99 @@ const App = () => {
       <div className="mt-5 space-y-4 rounded-md border p-4">
         <h2 className="text-xl font-bold">新しいタスクの追加</h2>
 
-        <div>
-          <input
-            type="text"
-            value={newTodoName}
-            onChange={updateNewTodoName}
-            placeholder="タスク名 (2文字以上、32文字以内)"
-            className={twMerge(
-              "grow rounded-md border p-2 w-full",
-              newTodoNameError && "border-red-500 outline-red-500"
-            )}
-          />
-          {newTodoNameError && (
-            <div className="mt-2 flex items-center space-x-1 text-sm font-bold text-red-500">
-              <FontAwesomeIcon
-                icon={faTriangleExclamation}
-                className="mr-0.5"
-              />
-              <div>{newTodoNameError}</div>
+        {isAddingTodo && (
+          <>
+            <div
+              className="overlay"
+              onClick={() => setIsAddingTodo(false)}
+            ></div>
+            <div className="modal">
+              <div>
+                <input
+                  type="text"
+                  value={newTodoName}
+                  onChange={updateNewTodoName}
+                  placeholder="タスク名 (2文字以上、32文字以内)"
+                  className={twMerge(
+                    "grow rounded-md border p-2 w-full",
+                    newTodoNameError && "border-red-500 outline-red-500"
+                  )}
+                />
+                {newTodoNameError && (
+                  <div className="mt-2 flex items-center space-x-1 text-sm font-bold text-red-500">
+                    <FontAwesomeIcon
+                      icon={faTriangleExclamation}
+                      className="mr-0.5"
+                    />
+                    <div>{newTodoNameError}</div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-5">
+                <div className="font-bold">優先度</div>
+                {[1, 2, 3].map((value) => (
+                  <label key={value} className="flex items-center space-x-1">
+                    <input
+                      name="priorityGroup"
+                      type="radio"
+                      value={value}
+                      checked={newTodoPriority === value}
+                      onChange={updateNewTodoPriority}
+                    />
+                    <span>{value}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-x-2">
+                <label htmlFor="deadline" className="font-bold">
+                  期限
+                </label>
+                <input
+                  type="datetime-local"
+                  id="deadline"
+                  value={
+                    newTodoDeadline
+                      ? dayjs(newTodoDeadline).format("YYYY-MM-DDTHH:mm:ss")
+                      : ""
+                  }
+                  onChange={updateDeadline}
+                  className="rounded-md border border-gray-400 px-2 py-0.5"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={addNewTodo}
+                className={twMerge(
+                  "w-full rounded-md bg-indigo-500 px-3 py-1 font-bold text-white hover:bg-indigo-600",
+                  newTodoNameError && "cursor-not-allowed opacity-50"
+                )}
+              >
+                新しいタスクを追加
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsAddingTodo(false)}
+                className="mt-2 w-full rounded-md bg-gray-500 px-3 py-1 font-bold text-white hover:bg-gray-600"
+              >
+                キャンセル
+              </button>
             </div>
-          )}
-        </div>
+          </>
+        )}
 
-        <div className="flex gap-5">
-          <div className="font-bold">優先度</div>
-          {[1, 2, 3].map((value) => (
-            <label key={value} className="flex items-center space-x-1">
-              <input
-                name="priorityGroup"
-                type="radio"
-                value={value}
-                checked={newTodoPriority === value}
-                onChange={updateNewTodoPriority}
-              />
-              <span>{value}</span>
-            </label>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-x-2">
-          <label htmlFor="deadline" className="font-bold">
-            期限
-          </label>
-          <input
-            type="datetime-local"
-            id="deadline"
-            value={
-              newTodoDeadline
-                ? dayjs(newTodoDeadline).format("YYYY-MM-DDTHH:mm:ss")
-                : ""
-            }
-            onChange={updateDeadline}
-            className="rounded-md border border-gray-400 px-2 py-0.5"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={addNewTodo}
-          className={twMerge(
-            "w-full rounded-md bg-indigo-500 px-3 py-1 font-bold text-white hover:bg-indigo-600",
-            newTodoNameError && "cursor-not-allowed opacity-50"
-          )}
-        >
-          新しいタスクを追加
-        </button>
+        {!isAddingTodo && (
+          <button
+            type="button"
+            onClick={() => setIsAddingTodo(true)}
+            className="w-full rounded-md bg-indigo-500 px-3 py-1 font-bold text-white hover:bg-indigo-600"
+          >
+            新しいタスクを追加
+          </button>
+        )}
 
         <button
           type="button"
@@ -217,7 +275,22 @@ const App = () => {
           完了済みのタスクを削除
         </button>
       </div>
-
+      <div className="mt-4 flex justify-between">
+        <button
+          type="button"
+          onClick={sortTodosByDeadline}
+          className="rounded-md bg-green-500 px-3 py-1 font-bold text-white hover:bg-green-600"
+        >
+          期日でソート
+        </button>
+        <button
+          type="button"
+          onClick={sortTodosByPriority}
+          className="rounded-md bg-yellow-500 px-3 py-1 font-bold text-white hover:bg-yellow-600"
+        >
+          優先度でソート
+        </button>
+      </div>
       <div className="mt-5">
         <TodoList todos={todos} updateIsDone={updateIsDone} remove={remove} />
       </div>

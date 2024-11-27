@@ -39,7 +39,6 @@ const TodoList = (props: Props) => {
             todo.isDone && "bg-blue-50 opacity-50"
           )}
         >
-          {todo.name} 優先度: {todo.priority}
           <input
             type="checkbox"
             checked={todo.isDone}
